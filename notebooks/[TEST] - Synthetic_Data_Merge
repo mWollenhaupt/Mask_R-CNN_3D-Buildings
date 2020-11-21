@@ -1,0 +1,233 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import os\n",
+    "import numpy as np\n",
+    "import skimage.io\n",
+    "import skimage.external.tifffile\n",
+    "import shutil\n",
+    "import arcpy"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "folder = r\"C:\\Users\\MoritzWollenhaupt\\Desktop\\muenster\\raster\\baeume_clean\""
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "files = [os.path.join(folder, file) for file in os.listdir(folder)]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "target = r\"C:\\Users\\MoritzWollenhaupt\\Desktop\\muenster\\raster\\baeume_clean2\"\n",
+    "for file in files:\n",
+    "    basename = os.path.splitext(os.path.basename(file))[0]\n",
+    "    img = skimage.io.imread(file)\n",
+    "    img *= 16\n",
+    "    with skimage.external.tifffile.TiffWriter(os.path.join(target, \"{}.tif\".format(basename))) as tif:\n",
+    "                tif.save(img, compress=9)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "img = skimage.io.imread(os.path.join(r\"C:\\Users\\MoritzWollenhaupt\\Desktop\\muenster\\raster\\baeume_clean2\", \"0000.tif\"))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "np.max(img)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "np.unique(img)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import random\n",
+    "import shutil\n",
+    "\n",
+    "def merge_synthetic_data(heights, noises):\n",
+    "    sub_folders = [os.path.join(heights, folder) for folder in os.listdir(heights) if os.path.isdir(os.path.join(heights, folder))]\n",
+    "    noise_rasters = [os.path.join(noises, raster) for raster in os.listdir(noises) if raster.endswith(\".tif\")]\n",
+    "    for folder in sub_folders:\n",
+    "        noise = noise_rasters[random.randint(0, len(noise_rasters)-1)]\n",
+    "        name = os.path.basename(folder)\n",
+    "        height_ras = skimage.io.imread(os.path.join(folder, \"{}.tif\".format(name)))\n",
+    "        noise_ras = skimage.io.imread(noise)[:,:,0]\n",
+    "        height_ras_gt0 = (height_ras>0).astype(np.uint8)\n",
+    "        noise_ras_gt0 = (noise_ras>0).astype(np.uint8)\n",
+    "        result = height_ras+((noise_ras_gt0-height_ras_gt0)*noise_ras)\n",
+    "        shutil.move(os.path.join(folder, \"{}.tif\".format(name)), os.path.join(folder, \"{}_orig.tif\".format(name)))\n",
+    "        with skimage.external.tifffile.TiffWriter(os.path.join(folder, \"{}.tif\".format(name))) as tif:\n",
+    "                tif.save(result, compress=9)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "heights = r\"C:\\Users\\MoritzWollenhaupt\\Desktop\\muenster\\chips\\single_masks\"\n",
+    "noises = r\"C:\\Users\\MoritzWollenhaupt\\Desktop\\muenster\\raster\\baeume_clean2\"\n",
+    "merge_synthetic_data(heights, noises)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 41,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "ndom_path = r\"C:\\Users\\MoritzWollenhaupt\\Desktop\\muenster\\3dm\\tif\\ndom\\3dm_32_398_5752_1_nw_ndom.tif\"\n",
+    "synt_path = r\"C:\\Users\\MoritzWollenhaupt\\Desktop\\muenster\\synthetic_muenster.tif\"\n",
+    "expd_path = r\"C:\\Users\\MoritzWollenhaupt\\Desktop\\muenster\\synthetic_muenster_expand_tf.tif\""
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 48,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "ndom_ras = arcpy.sa.Raster(ndom_path)\n",
+    "synt_ras = arcpy.sa.Raster(synt_path)\n",
+    "expd_ras = arcpy.sa.Raster(expd_path)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 49,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "crop = synt_ras+ndom_ras-ndom_ras\n",
+    "crop_ex = expd_ras+ndom_ras-ndom_ras\n",
+    "expand_only = crop_ex-(crop>0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 55,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "expand_only.save(r\"C:\\Users\\MoritzWollenhaupt\\Desktop\\a\\im2g.tif\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 29,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "crop_synt = arcpy.RasterToNumPyArray(crop, nodata_to_value=0.0)\n",
+    "crop_ndom = arcpy.RasterToNumPyArray(ndom_ras, nodata_to_value=0.0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 30,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "temp_synt = (crop_synt > 0).astype(np.int8)\n",
+    "temp_ndom = (crop_ndom > 0).astype(np.int8)\n",
+    "noise_tf = temp_ndom-temp_synt\n",
+    "noise_tf[noise_tf<0] = 0\n",
+    "noise = noise_tf * crop_ndom\n",
+    "mix = crop_ndom+noise"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 31,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "ras = arcpy.NumPyArrayToRaster(mix)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 33,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "ras.save(r\"C:\\Users\\MoritzWollenhaupt\\Desktop\\a\\img.tif\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.6.9"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}

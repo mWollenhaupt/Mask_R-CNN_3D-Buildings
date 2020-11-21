@@ -1,0 +1,555 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import numpy as np\n",
+    "import skimage.io\n",
+    "import os\n",
+    "import skimage.external.tifffile\n",
+    "from scipy.stats import truncnorm\n",
+    "import matplotlib.pyplot as plt\n",
+    "import arcpy\n",
+    "import random"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def get_truncated_normal(mean=0, sd=1, low=0, upp=10):\n",
+    "    return truncnorm((low - mean) / sd, (upp - mean) / sd, loc=mean, scale=sd)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "count, bins, ignored = plt.hist(data, 30, density=True)\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "dataset = r\"C:\\Users\\MoritzWollenhaupt\\Desktop\\muenster\\AX_Gebaeude.shp\""
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#dataset_fields = arcpy.ListFields(dataset)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#arcpy.DeleteField_management(dataset, [field.name for field in dataset_fields[2:]])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#arcpy.AddField_management(dataset, \"roof\", \"TEXT\")\n",
+    "#arcpy.AddField_management(dataset, \"eave\", \"FLOAT\")\n",
+    "#arcpy.AddField_management(dataset, \"ridge\", \"FLOAT\")\n",
+    "#arcpy.AddField_management(dataset, \"totalHght\", \"FLOAT\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "count = int(arcpy.GetCount_management(dataset).getOutput(0))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "count"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "counts_per_type = count // 4"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "counts_per_type"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Flachdächer"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "fd_arr = []\n",
+    "low = 3.25\n",
+    "upp = 60\n",
+    "mean = 11.5\n",
+    "sd = 5\n",
+    "dist = get_truncated_normal(mean=mean, sd=sd, low=low, upp=upp)\n",
+    "heights = dist.rvs(counts_per_type)\n",
+    "for i in range(counts_per_type):\n",
+    "    fd_arr.append([\"Flach\", heights[i], heights[i], heights[i]])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "max(fd_arr, key=lambda x:x[1])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "min(fd_arr, key=lambda x:x[1])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Satteldächer"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "sd_arr = []\n",
+    "low_eave = 3\n",
+    "upp_eave = 9.4\n",
+    "mean_eave = 6.8\n",
+    "sd_eave = 2.4\n",
+    "dist_eave = get_truncated_normal(mean=mean_eave, sd=sd_eave, low=low_eave, upp=upp_eave)\n",
+    "heights_eave = dist_eave.rvs(counts_per_type)\n",
+    "low_roof = 2.7\n",
+    "upp_roof = 4.3\n",
+    "mean_roof = 3.2\n",
+    "sd_roof = 0.2\n",
+    "dist_roof = get_truncated_normal(mean=mean_roof, sd=sd_roof, low=low_roof, upp=upp_roof)\n",
+    "heights_roof = dist_roof.rvs(counts_per_type)\n",
+    "for i in range(counts_per_type):\n",
+    "    sd_arr.append([\"Sattel\", heights_eave[i], heights_roof[i], heights_eave[i]+heights_roof[i]])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "max(sd_arr, key=lambda x:x[1])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "min(sd_arr, key=lambda x:x[1])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Pultdächer"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "pd_arr = []\n",
+    "low_eave = 3\n",
+    "upp_eave = 9\n",
+    "mean_eave = 5.8\n",
+    "sd_eave = 1.8\n",
+    "dist_eave = get_truncated_normal(mean=mean_eave, sd=sd_eave, low=low_eave, upp=upp_eave)\n",
+    "heights_eave = dist_eave.rvs(counts_per_type)\n",
+    "low_roof = 2.7\n",
+    "upp_roof = 3.5\n",
+    "mean_roof = 3\n",
+    "sd_roof = 0.2\n",
+    "dist_roof = get_truncated_normal(mean=mean_roof, sd=sd_roof, low=low_roof, upp=upp_roof)\n",
+    "heights_roof = dist_roof.rvs(counts_per_type)\n",
+    "for i in range(counts_per_type):\n",
+    "    pd_arr.append([\"Pult\", heights_eave[i], heights_roof[i], heights_eave[i]+heights_roof[i]])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "max(pd_arr, key=lambda x:x[1])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "min(pd_arr, key=lambda x:x[1])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Walmdächer"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "wd_arr = []\n",
+    "low_eave = 3\n",
+    "upp_eave = 9.4\n",
+    "mean_eave = 6.8\n",
+    "sd_eave = 2.4\n",
+    "dist_eave = get_truncated_normal(mean=mean_eave, sd=sd_eave, low=low_eave, upp=upp_eave)\n",
+    "heights_eave = dist_eave.rvs(counts_per_type+2)\n",
+    "low_roof = 2.7\n",
+    "upp_roof = 4.3\n",
+    "mean_roof = 3.2\n",
+    "sd_roof = 0.2\n",
+    "dist_roof = get_truncated_normal(mean=mean_roof, sd=sd_roof, low=low_roof, upp=upp_roof)\n",
+    "heights_roof = dist_roof.rvs(counts_per_type+2)\n",
+    "for i in range(counts_per_type+2):\n",
+    "    wd_arr.append([\"Walm\", heights_eave[i], heights_roof[i], heights_eave[i]+heights_roof[i]])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "max(wd_arr, key=lambda x:x[1])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "min(wd_arr, key=lambda x:x[1])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "len(fd_arr)+len(sd_arr)+len(pd_arr)+len(wd_arr)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "arr = fd_arr+sd_arr+pd_arr+wd_arr\n",
+    "random.shuffle(arr)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "with arcpy.da.UpdateCursor(dataset, [\"roof\", \"eave\", \"ridge\", \"totalHght\"]) as cursor:\n",
+    "    i = 0\n",
+    "    for row in cursor:\n",
+    "        row[0]=arr[i][0]\n",
+    "        row[1]=arr[i][1]\n",
+    "        row[2]=arr[i][2]\n",
+    "        row[3]=arr[i][3]\n",
+    "        cursor.updateRow(row)\n",
+    "        i+=1\n",
+    "del cursor"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "folder = r\"C:\\Users\\MoritzWollenhaupt\\Desktop\\muenster\\raster\\split_nodata\""
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "files = [os.path.join(folder, file) for file in os.listdir(folder) if os.path.join(folder, file).endswith(\".TIF\")]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "folder_out = r\"C:\\Users\\MoritzWollenhaupt\\Desktop\\muenster\\raster\\split\""
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "ras_np = None\n",
+    "for file in files:\n",
+    "    ras = arcpy.sa.Raster(file)\n",
+    "    name = ras.name\n",
+    "    ras_np = arcpy.RasterToNumPyArray(ras, nodata_to_value=0)\n",
+    "    with skimage.external.tifffile.TiffWriter(os.path.join(folder_out, name)) as tif:\n",
+    "        tif.save(ras_np, compress=9)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## RE-Georefrence"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def shift_and_rescale(orig, cpy):\n",
+    "    basename = os.path.splitext(os.path.basename(orig))[0]\n",
+    "    img_orig = arcpy.sa.Raster(orig)\n",
+    "    img_cpy = arcpy.sa.Raster(cpy)\n",
+    "    arcpy.env.outputCoordinateSystem = img_orig\n",
+    "    target = r\"C:\\Users\\MoritzWollenhaupt\\Desktop\\muenster\\raster\\split\\shifted\"\n",
+    "    os.makedirs(target, exist_ok=True)\n",
+    "    shifted = os.path.join(target, \"{}.tif\".format(basename))\n",
+    "    arcpy.Shift_management(img_cpy,\n",
+    "                           shifted,\n",
+    "                           img_orig.extent.XMin - img_cpy.extent.XMin,\n",
+    "                           img_orig.extent.YMin - img_cpy.extent.YMin,\n",
+    "                           in_snap_raster=img_orig\n",
+    "                           )\n",
+    "    target2 = r\"C:\\Users\\MoritzWollenhaupt\\Desktop\\muenster\\raster\\split\\rescaled\"\n",
+    "    os.makedirs(target2, exist_ok=True)\n",
+    "    rescaled = os.path.join(target2, \"{}.tif\".format(basename))\n",
+    "    arcpy.Rescale_management(shifted,\n",
+    "                             rescaled,\n",
+    "                             img_orig.meanCellWidth,\n",
+    "                             img_orig.meanCellHeight\n",
+    "                             )"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "folder_split = r\"C:\\Users\\MoritzWollenhaupt\\Desktop\\muenster\\raster\\split\"\n",
+    "files_split = [os.path.join(folder_split, file) for file in os.listdir(folder_split) if (os.path.isfile(os.path.join(folder_split, file)) and file.endswith(\".TIF\"))]\n",
+    "folder_orig = r\"C:\\Users\\MoritzWollenhaupt\\Desktop\\muenster\\raster\\split_nodata\"\n",
+    "files_orig = [os.path.join(folder_orig, file) for file in os.listdir(folder_orig) if (os.path.isfile(os.path.join(folder_orig, file)) and file.endswith(\".TIF\"))]\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 18,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "for i in range(len(files_orig)):\n",
+    "     shift_and_rescale(files_orig[i], files_split[i])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import sys\n",
+    "ROOT_DIR = os.path.abspath(\"../\")\n",
+    "os.chdir(ROOT_DIR)\n",
+    "sys.path.append(ROOT_DIR)\n",
+    "from preprocessing import chips"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 21,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "path = r\"C:\\Users\\MoritzWollenhaupt\\Desktop\\muenster\\raster\\split\\rescaled\"\n",
+    "images = [os.path.join(path, img) for img in os.listdir(path) if img.endswith(\".tif\")]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 23,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Running function 'create_training_chips'..\n",
+      "Current Progress: 100.0%\n",
+      "Current Run Time: 935.16 minutes\n",
+      "Expected Run Time: 935.16 minutes\n",
+      "-------------------------------------\n",
+      "Expected Remaining Time: 0.0 minutes\n"
+     ]
+    }
+   ],
+   "source": [
+    "chips.create_training_chips(images,\n",
+    "                            r\"C:\\Users\\MoritzWollenhaupt\\Desktop\\muenster\\chips\\esri\",\n",
+    "                            r\"C:\\Users\\MoritzWollenhaupt\\Desktop\\muenster\\AX_Gebaeude.shp\",\n",
+    "                            \"roof_int\",\n",
+    "                            512, 256,\n",
+    "                            rotation=0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Running function 'read_path'..\n",
+      "Current Progress: 100.0%\n",
+      "Current Run Time: 0.89 minutes\n",
+      "Expected Run Time: 0.89 minutes\n",
+      "-------------------------------------\n",
+      "Expected Remaining Time: 0.0 minutes\n"
+     ]
+    }
+   ],
+   "source": [
+    "chips.unique_colors_to_masks_mt(r\"C:\\Users\\MoritzWollenhaupt\\Desktop\\muenster\\chips\\esri\", \n",
+    "                                r\"C:\\Users\\MoritzWollenhaupt\\Desktop\\muenster\\chips\\single_masks\", \n",
+    "                                12)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.6.9"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}
